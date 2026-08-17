@@ -1,0 +1,38 @@
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from app.api.routes.health import router as health_router
+from app.api.routes.users import router as users_router
+
+app = FastAPI(
+    title="Supabase Monitor",
+    version="0.1.0",
+    description="API inicial para monitoramento do Supabase.",
+)
+
+# Permite que o dashboard local consulte a API durante o desenvolvimento.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://127.0.0.1:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://localhost:5500",
+        "http://127.0.0.1:5500",
+    ],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
+app.include_router(health_router, prefix="/api")
+app.include_router(users_router, prefix="/api")
+
+
+@app.get("/")
+def root():
+    return {
+        "project": "Supabase Monitor",
+        "status": "online",
+        "docs": "/docs",
+    }
