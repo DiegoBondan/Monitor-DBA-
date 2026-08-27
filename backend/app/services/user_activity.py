@@ -18,6 +18,7 @@ async def get_user_activity() -> UserActivityResponse:
             active_count=0,
             inactive_count=0,
             users=[],
+            max_connections=settings.max_connections,
             error="Configure SUPABASE_SERVICE_ROLE_KEY no backend para acompanhar usuários.",
         )
 
@@ -39,7 +40,7 @@ async def get_user_activity() -> UserActivityResponse:
         profiles_response.raise_for_status()
         sessions_response.raise_for_status()
     except httpx.HTTPError as exc:
-        return UserActivityResponse(active_count=0, inactive_count=0, users=[], error=str(exc))
+        return UserActivityResponse(active_count=0, inactive_count=0, users=[], max_connections=settings.max_connections, error=str(exc))
 
     latest_sessions: dict[str, dict] = {}
     for session in sessions_response.json():
@@ -72,6 +73,7 @@ async def get_user_activity() -> UserActivityResponse:
     return UserActivityResponse(
         active_count=sum(user.active for user in users),
         inactive_count=sum(not user.active for user in users),
+        max_connections=settings.max_connections,
         users=users,
     )
 

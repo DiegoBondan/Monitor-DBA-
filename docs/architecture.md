@@ -3,12 +3,12 @@
 O cliente acessa a API FastAPI, que consulta `GET /auth/v1/settings` no projeto Supabase e retorna o estado normalizado.
 
 ```text
-Dashboard (futuro) -> FastAPI /api/health -> Supabase Auth settings
-                              |
-                              +-> banco de histórico (fase futura)
+Dashboard -> FastAPI /api/health -> Supabase Auth settings
+                         |
+                         +-> banco de histórico
 ```
 
-Na primeira versão, a API apenas consulta o Supabase. A tabela `monitoramento` foi preparada para persistência futura, que deve ser feita por um job interno e com políticas RLS definidas.
+A API consulta o Supabase e registra as verificações automáticas no histórico por meio do serviço de persistência. A tabela `monitoramento` deve estar criada no banco para que o histórico seja salvo.
 
 ## Estados
 

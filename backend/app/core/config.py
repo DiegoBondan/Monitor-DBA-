@@ -16,6 +16,8 @@ class Settings:
     supabase_anon_key: str
     supabase_service_role_key: str
     monitor_timeout_seconds: float
+    monitor_interval_seconds: float
+    max_connections: int
 
     @property
     def is_supabase_configured(self) -> bool:
@@ -29,4 +31,6 @@ def get_settings() -> Settings:
         supabase_anon_key=os.getenv("SUPABASE_ANON_KEY", ""),
         supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
         monitor_timeout_seconds=float(os.getenv("MONITOR_TIMEOUT_SECONDS", "5")),
+        monitor_interval_seconds=float(os.getenv("MONITOR_INTERVAL_SECONDS", "30")),
+        max_connections=int(os.getenv("SUPABASE_MAX_CONNECTIONS", "100")),
     )
