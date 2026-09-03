@@ -1,5 +1,5 @@
 const localHost = ["localhost", "127.0.0.1"].includes(window.location.hostname);
-const defaultHealthUrl = localHost ? "http://127.0.0.1:8000/api/health" : `${window.location.origin}/api/health`;
+const defaultHealthUrl = localHost ? "http://127.0.0.1:8000/api/health" : "https://monitor-dba.onrender.com/api/health";
 const healthUrl = new URLSearchParams(window.location.search).get("api") || defaultHealthUrl;
 const apiBase = healthUrl.replace(/\/health(?:\?.*)?$/, "");
 const metricsUrl = `${apiBase}/metrics`;
