@@ -10,7 +10,7 @@ from app.services.metrics import record_check
 
 
 async def check_supabase() -> HealthResponse:
-    """Consulta um endpoint público de configuração sem usar service_role key."""
+    """Consulta a disponibilidade do Supabase (auth com a chave pública, banco com a service_role key)."""
     settings = get_settings()
     if not settings.is_supabase_configured:
         result = HealthResponse(
@@ -23,13 +23,14 @@ async def check_supabase() -> HealthResponse:
 
     started = time.perf_counter()
     try:
+        database_key = settings.supabase_service_role_key or settings.supabase_anon_key
         async with httpx.AsyncClient(timeout=settings.monitor_timeout_seconds) as client:
             response, database_response = await client.get(
                 f"{settings.supabase_url}/auth/v1/settings",
                 headers={"apikey": settings.supabase_anon_key},
             ), await client.get(
                 f"{settings.supabase_url}/rest/v1/",
-                headers={"apikey": settings.supabase_anon_key},
+                headers={"apikey": database_key, "Authorization": f"Bearer {database_key}"},
             )
         latency_ms = round((time.perf_counter() - started) * 1000, 2)
         database_status = "online" if database_response.is_success else "offline"
