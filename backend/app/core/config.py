@@ -16,6 +16,7 @@ class Settings:
     supabase_url: str
     supabase_anon_key: str
     supabase_service_role_key: str
+    dashboard_api_key: str
     monitor_timeout_seconds: float
     monitor_interval_seconds: float
     max_connections: int
@@ -31,6 +32,7 @@ def get_settings() -> Settings:
         supabase_url=os.getenv("SUPABASE_URL", "").rstrip("/"),
         supabase_anon_key=os.getenv("SUPABASE_ANON_KEY", ""),
         supabase_service_role_key=os.getenv("SUPABASE_SERVICE_ROLE_KEY", ""),
+        dashboard_api_key=os.getenv("DASHBOARD_API_KEY", ""),
         monitor_timeout_seconds=float(os.getenv("MONITOR_TIMEOUT_SECONDS", "5")),
         monitor_interval_seconds=float(os.getenv("MONITOR_INTERVAL_SECONDS", "30")),
         max_connections=int(os.getenv("SUPABASE_MAX_CONNECTIONS", "100")),

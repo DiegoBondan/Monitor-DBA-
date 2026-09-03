@@ -4,6 +4,7 @@ const healthUrl = new URLSearchParams(window.location.search).get("api") || defa
 const apiBase = healthUrl.replace(/\/health(?:\?.*)?$/, "");
 const metricsUrl = `${apiBase}/metrics`;
 const usersUrl = `${apiBase}/users/activity`;
+const dashboardApiKey = new URLSearchParams(window.location.search).get("key") || "cMfhF1zLRlVdhlaRCJi9YG8w9lOowckx0kyOSv8wFIg";
 const refreshIntervalMs = 10_000;
 const elements = Object.fromEntries([...document.querySelectorAll("[id]")].map((element) => [element.id, element]));
 elements.endpoint.textContent = healthUrl;
@@ -35,10 +36,11 @@ function renderUsers(data) {
   elements.usersList.replaceChildren(); elements.usersMessage.textContent = data.error || (data.users.length ? "" : "Nenhum perfil ou sessão foi encontrado.");
   data.users.forEach((user) => { const row = document.createElement("article"), name = user.name || "Usuário sem nome"; row.className = "user-row"; row.innerHTML = `<div class="user-avatar">${escapeHtml(name.trim().charAt(0).toUpperCase())}</div><div class="user-info"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(user.role)}</span></div><span class="user-state ${user.active ? "active" : "inactive"}">${user.active ? "Ativo" : "Inativo"}</span>`; elements.usersList.append(row); });
 }
-async function getJson(url) { const response = await fetch(url, { headers: { Accept: "application/json" } }); if (!response.ok) throw new Error(`A API respondeu com HTTP ${response.status}.`); return response.json(); }
+async function getJson(url, extraHeaders = {}) { const response = await fetch(url, { headers: { Accept: "application/json", ...extraHeaders } }); if (!response.ok) throw new Error(`A API respondeu com HTTP ${response.status}.`); return response.json(); }
 async function refreshDashboard() {
   elements.refreshButton.disabled = true; elements.refreshButton.textContent = "Atualizando...";
-  try { const health = await getJson(healthUrl); setState(health.status, health); const [metrics, users] = await Promise.all([getJson(metricsUrl), getJson(usersUrl).catch((error) => ({ active_count: 0, inactive_count: 0, users: [], error: error.message }))]); renderMetrics(metrics); renderUsers(users); elements.usersUpdated.textContent = "Atualizado agora"; elements.updatedAt.textContent = `Atualizado às ${new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`; } catch (error) { setState("offline", { error: error.message }); elements.updatedAt.textContent = "Falha ao atualizar"; } finally { elements.refreshButton.disabled = false; elements.refreshButton.textContent = "↻ Atualizar"; }
+  const authHeaders = { "X-API-Key": dashboardApiKey };
+  try { const health = await getJson(healthUrl); setState(health.status, health); const [metrics, users] = await Promise.all([getJson(metricsUrl, authHeaders), getJson(usersUrl, authHeaders).catch((error) => ({ active_count: 0, inactive_count: 0, users: [], error: error.message }))]); renderMetrics(metrics); renderUsers(users); elements.usersUpdated.textContent = "Atualizado agora"; elements.updatedAt.textContent = `Atualizado às ${new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`; } catch (error) { setState("offline", { error: error.message }); elements.updatedAt.textContent = "Falha ao atualizar"; } finally { elements.refreshButton.disabled = false; elements.refreshButton.textContent = "↻ Atualizar"; }
 }
 document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => { document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("is-selected", item === tab)); document.querySelectorAll("#overviewPanel, #usersPanel").forEach((panel) => { panel.hidden = panel.id !== tab.dataset.panel; }); }));
 elements.refreshButton.addEventListener("click", refreshDashboard); refreshDashboard(); window.setInterval(refreshDashboard, refreshIntervalMs);
