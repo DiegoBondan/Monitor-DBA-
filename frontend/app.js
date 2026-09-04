@@ -34,8 +34,9 @@ function renderHistory(history) {
   points.forEach((point) => { const bar = document.createElement("span"); bar.className = `history-bar ${point.status}`; bar.style.height = `${Math.max(16, Math.round(((point.latency_ms || 0) / maxLatency) * 100))}%`; bar.title = `${new Date(point.checked_at).toLocaleString("pt-BR")}: ${formatStatus(point.status)}${point.latency_ms == null ? "" : `, ${point.latency_ms} ms`}`; elements.historyChart.append(bar); });
 }
 function renderMetrics(data) {
+  const metricsError = friendlyError(data.error);
   elements.availability.textContent = `${data.availability_percent.toFixed(2)}%`; elements.requests.textContent = data.total_requests; elements.errors.textContent = data.error_count;
-  elements.requestsDescription.textContent = `${data.successful_requests} concluídas com sucesso`; elements.errorsDescription.textContent = data.error_count ? "Falhas ou respostas degradadas" : "Nenhuma falha registrada";
+  elements.requestsDescription.textContent = metricsError || `${data.successful_requests} concluídas com sucesso`; elements.errorsDescription.textContent = data.error_count ? "Falhas ou respostas degradadas" : "Nenhuma falha registrada";
   elements.averageLatency.textContent = `Latência média: ${data.average_latency_ms == null ? "—" : `${data.average_latency_ms} ms`}`; elements.httpStatus.textContent = `HTTP: ${data.http_status ?? "—"}`; elements.historyCount.textContent = `${data.history.length} verificações`; renderHistory(data.history);
   elements.lastChecked.textContent = data.last_checked_at ? new Date(data.last_checked_at).toLocaleTimeString("pt-BR") : "—";
 }
@@ -55,7 +56,16 @@ async function getJson(url, extraHeaders = {}) { const response = await fetch(ur
 async function refreshDashboard() {
   elements.refreshButton.disabled = true; elements.refreshButton.textContent = "Atualizando...";
   const authHeaders = { "X-API-Key": dashboardApiKey };
-  try { const health = await getJson(healthUrl); setState(health.status, health); const [metrics, users] = await Promise.all([getJson(metricsUrl, authHeaders), getJson(usersUrl, authHeaders).catch((error) => ({ active_count: 0, inactive_count: 0, users: [], error: error.message }))]); renderMetrics(metrics); renderUsers(users); elements.usersUpdated.textContent = "Atualizado agora"; elements.updatedAt.textContent = `Atualizado às ${new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`; } catch (error) { setState("offline", { error: error.message }); elements.updatedAt.textContent = "Falha ao atualizar"; } finally { elements.refreshButton.disabled = false; elements.refreshButton.textContent = "↻ Atualizar"; }
+  try {
+    const health = await getJson(healthUrl); setState(health.status, health);
+    const emptyMetrics = { availability_percent: 0, total_requests: 0, successful_requests: 0, error_count: 0, average_latency_ms: null, http_status: null, history: [], last_checked_at: null };
+    const [metrics, users] = await Promise.all([
+      getJson(metricsUrl, authHeaders).catch((error) => ({ ...emptyMetrics, error: error.message })),
+      getJson(usersUrl, authHeaders).catch((error) => ({ active_count: 0, inactive_count: 0, users: [], max_connections: 0, error: error.message })),
+    ]);
+    renderMetrics(metrics); renderUsers(users);
+    elements.usersUpdated.textContent = "Atualizado agora"; elements.updatedAt.textContent = `Atualizado às ${new Intl.DateTimeFormat("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" }).format(new Date())}`;
+  } catch (error) { setState("offline", { error: error.message }); elements.updatedAt.textContent = "Falha ao atualizar"; } finally { elements.refreshButton.disabled = false; elements.refreshButton.textContent = "↻ Atualizar"; }
 }
 document.querySelectorAll(".tab").forEach((tab) => tab.addEventListener("click", () => { document.querySelectorAll(".tab").forEach((item) => item.classList.toggle("is-selected", item === tab)); document.querySelectorAll("#overviewPanel, #usersPanel").forEach((panel) => { panel.hidden = panel.id !== tab.dataset.panel; }); }));
 elements.refreshButton.addEventListener("click", refreshDashboard); refreshDashboard(); window.setInterval(refreshDashboard, refreshIntervalMs);
