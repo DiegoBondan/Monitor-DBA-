@@ -32,7 +32,7 @@ h2 { font-size: 1.35rem; }
 .metrics { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
 .metrics-complete { grid-template-columns: repeat(3, 1fr); }
 .metric-card, .panel { border: 1px solid #26334a; border-radius: 14px; background: #111a2b; box-shadow: 0 12px 36px #0000001c; }
-.metric-card { min-height: 190px; padding: 22px; }
+.metric-card { min-height: 190px; min-width: 0; padding: 22px; }
 .primary-card { background: linear-gradient(135deg, #133b30, #11281f); border-color: #277157; }
 .card-heading { justify-content: space-between; color: #9caec5; font-size: .7rem; font-weight: 800; letter-spacing: .1em; }
 .pulse { width: 9px; height: 9px; border-radius: 50%; background: #fbbf24; }
@@ -40,10 +40,10 @@ h2 { font-size: 1.35rem; }
 .status-value, .metric-value { margin-top: 28px; font-size: 2rem; font-weight: 780; letter-spacing: -.04em; }
 .status-value { color: #fbbf24; text-transform: capitalize; }
 .metric-value small { color: #91a1b8; font-size: 1rem; font-weight: 650; letter-spacing: 0; }
-.metric-card p { margin: 8px 0 0; color: #9caec5; font-size: .88rem; line-height: 1.45; }
+.metric-card p { overflow-wrap: anywhere; margin: 8px 0 0; color: #9caec5; font-size: .88rem; line-height: 1.45; }
 .panel { margin-top: 18px; padding: 25px; }
 .history-summary { display: flex; flex-wrap: wrap; gap: 18px; margin-top: 24px; color: #a9b6ca; font-size: .9rem; }
-.history-chart { display: flex; align-items: end; gap: 4px; min-height: 150px; margin-top: 18px; padding: 14px; border: 1px solid #26334a; border-radius: 10px; background: #0e1727; color: #94a3b8; font-size: .9rem; }
+.history-chart { display: flex; align-items: end; gap: 4px; height: 150px; margin-top: 18px; padding: 14px; border: 1px solid #26334a; border-radius: 10px; background: #0e1727; color: #94a3b8; font-size: .9rem; }
 .history-bar { flex: 1; min-width: 4px; max-width: 18px; border-radius: 4px 4px 1px 1px; background: #64748b; transition: height .2s ease; }.history-bar.online { background: #3ecf8e; }.history-bar.degraded { background: #fbbf24; }.history-bar.offline, .history-bar.not_configured { background: #fb7185; }
 .chart-legend { display: flex; gap: 9px; align-items: center; margin: 12px 0 0; color: #94a3b8; font-size: .78rem; }.legend { width: 8px; height: 8px; border-radius: 50%; background: #3ecf8e; }.legend.degraded { background: #fbbf24; }.legend.offline { background: #fb7185; }.monitor-note { margin: 16px 0 0; color: #8392aa; font-size: .78rem; line-height: 1.5; }
 .users-hero { padding-bottom: 34px; }

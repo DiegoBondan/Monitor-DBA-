@@ -4,7 +4,15 @@ const healthUrl = new URLSearchParams(window.location.search).get("api") || defa
 const apiBase = healthUrl.replace(/\/health(?:\?.*)?$/, "");
 const metricsUrl = `${apiBase}/metrics`;
 const usersUrl = `${apiBase}/users/activity`;
-const dashboardApiKey = new URLSearchParams(window.location.search).get("key") || "cMfhF1zLRlVdhlaRCJi9YG8w9lOowckx0kyOSv8wFIg";
+const dashboardApiKey = (() => {
+  const params = new URLSearchParams(window.location.search);
+  const keyFromUrl = params.get("key");
+  if (!keyFromUrl) return localStorage.getItem("dashboardApiKey") || "";
+  localStorage.setItem("dashboardApiKey", keyFromUrl);
+  params.delete("key");
+  window.history.replaceState({}, "", `${window.location.pathname}${params.toString() ? `?${params}` : ""}${window.location.hash}`);
+  return keyFromUrl;
+})();
 const refreshIntervalMs = 10_000;
 const elements = Object.fromEntries([...document.querySelectorAll("[id]")].map((element) => [element.id, element]));
 elements.endpoint.textContent = healthUrl;
@@ -15,9 +23,10 @@ function setState(status, data = {}) {
   elements.connectionStatus.lastElementChild.textContent = formatStatus(status); elements.serviceStatus.textContent = formatStatus(status); elements.statusBadge.textContent = formatStatus(status);
   elements.serviceName.textContent = data.service || "supabase"; elements.latency.textContent = data.latency_ms == null ? "—" : `${data.latency_ms} ms`;
   elements.databaseStatus.textContent = data.database_status === "online" ? "🟢 OK" : data.database_status === "offline" ? "🔴 Indisponível" : "⚪ Não configurado";
-  elements.serviceDescription.textContent = status === "online" ? "O serviço está respondendo normalmente." : data.error || "Não foi possível consultar o serviço.";
+  const healthError = friendlyError(data.error);
+  elements.serviceDescription.textContent = status === "online" ? "O serviço está respondendo normalmente." : healthError || "Não foi possível consultar o serviço.";
   elements.latencyDescription.textContent = data.latency_ms == null ? "Sem medição disponível" : "Tempo da última consulta";
-  elements.message.textContent = data.error || (status === "online" ? "Conexão concluída com sucesso." : "Verificação finalizada.");
+  elements.message.textContent = healthError || (status === "online" ? "Conexão concluída com sucesso." : "Verificação finalizada.");
 }
 function renderHistory(history) {
   elements.historyChart.replaceChildren(); if (!history.length) { elements.historyChart.textContent = "O histórico aparecerá após a primeira verificação configurada."; return; }
@@ -31,9 +40,15 @@ function renderMetrics(data) {
   elements.lastChecked.textContent = data.last_checked_at ? new Date(data.last_checked_at).toLocaleTimeString("pt-BR") : "—";
 }
 function escapeHtml(value) { const element = document.createElement("span"); element.textContent = value; return element.innerHTML; }
+function friendlyError(message) {
+  if (!message) return message;
+  console.warn(message);
+  return message.length > 90 || /https?:\/\//.test(message) ? "Não foi possível carregar os dados no momento." : message;
+}
 function renderUsers(data) {
-  elements.activeUsers.textContent = data.active_count; elements.inactiveUsers.textContent = data.inactive_count; elements.totalUsers.textContent = data.users.length; elements.connections.textContent = `${data.active_count} / ${data.max_connections}`; elements.connectionsDescription.textContent = data.error || "Sessões ativas nos últimos 5 min";
-  elements.usersList.replaceChildren(); elements.usersMessage.textContent = data.error || (data.users.length ? "" : "Nenhum perfil ou sessão foi encontrado.");
+  const userError = friendlyError(data.error);
+  elements.activeUsers.textContent = data.active_count; elements.inactiveUsers.textContent = data.inactive_count; elements.totalUsers.textContent = data.users.length; elements.connections.textContent = `${data.active_count} / ${data.max_connections}`; elements.connectionsDescription.textContent = userError || "Sessões ativas nos últimos 5 min";
+  elements.usersList.replaceChildren(); elements.usersMessage.textContent = userError || (data.users.length ? "" : "Nenhum perfil ou sessão foi encontrado.");
   data.users.forEach((user) => { const row = document.createElement("article"), name = user.name || "Usuário sem nome"; row.className = "user-row"; row.innerHTML = `<div class="user-avatar">${escapeHtml(name.trim().charAt(0).toUpperCase())}</div><div class="user-info"><strong>${escapeHtml(name)}</strong><span>${escapeHtml(user.role)}</span></div><span class="user-state ${user.active ? "active" : "inactive"}">${user.active ? "Ativo" : "Inativo"}</span>`; elements.usersList.append(row); });
 }
 async function getJson(url, extraHeaders = {}) { const response = await fetch(url, { headers: { Accept: "application/json", ...extraHeaders } }); if (!response.ok) throw new Error(`A API respondeu com HTTP ${response.status}.`); return response.json(); }

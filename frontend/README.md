@@ -16,3 +16,13 @@ Abra `http://127.0.0.1:3000`. A tela consulta `http://127.0.0.1:8000/api/health`
 ```text
 http://127.0.0.1:3000/?api=http://outro-host:8000/api/health
 ```
+
+## Chave de API
+
+`/api/metrics` e `/api/users/activity` exigem a `DASHBOARD_API_KEY` configurada no backend. O frontend não traz nenhuma chave embutida no código. Na primeira visita, informe a chave uma vez pela query string:
+
+```text
+http://127.0.0.1:3000/?key=SUA_CHAVE_AQUI
+```
+
+O valor é salvo no `localStorage` do navegador (e removido da URL automaticamente); nas próximas visitas não é mais necessário informá-lo.
