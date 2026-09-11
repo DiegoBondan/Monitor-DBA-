@@ -3,19 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#101828" />
-    <title>Supabase Monitor</title>
+    <meta name="theme-color" content="#0e2a63" />
+    <title>Monitor Banco de Dados </title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet" />
     <link rel="stylesheet" href="./styles.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   </head>
   <body>
     <main class="dashboard">
       <header class="topbar">
-        <a class="brand" href="#" aria-label="Supabase Monitor, início"><span class="brand-mark" aria-hidden="true">S</span><span>Supabase Monitor</span></a>
-        <div class="topbar-actions"><span class="updated" id="updatedAt">Verificações automáticas a cada 30 s</span><button class="refresh-button" id="refreshButton" type="button">↻ Atualizar</button></div>
+        <a class="brand" href="#" aria-label="Monitor Banco de Dados, início"><span class="brand-mark" aria-hidden="true">S</span><span>Monitor Banco de Dados</span></a>
+        <div class="topbar-actions"><span class="updated" id="updatedAt">Verificações automáticas a cada 3 s</span></div>
       </header>
       <nav class="tabs" aria-label="Navegação do painel"><button class="tab is-selected" type="button" data-panel="overviewPanel">Visão geral</button><button class="tab" type="button" data-panel="usersPanel">Usuários</button></nav>
       <div id="overviewPanel">
-        <section class="hero" aria-labelledby="page-title"><div><p class="eyebrow">MONITORAMENTO EM TEMPO REAL</p><h1 id="page-title">Monitor Banco de Dados</h1><p class="subtitle">Disponibilidade, desempenho e sessões do seu projeto Supabase em um único painel.</p></div><div class="connection" id="connectionStatus" role="status"><span class="status-dot"></span><span>Verificando conexão</span></div></section>
+        <section class="status-banner">
+          <div class="connection" id="connectionStatus" role="status"><span class="status-dot"></span><span>Verificando conexão</span></div>
+          <span class="next-check" id="nextCheckLabel">Próxima verificação em —</span>
+        </section>
         <section class="metrics metrics-complete" aria-label="Métricas do monitor">
           <article class="metric-card primary-card"><div class="card-heading"><span>STATUS DO SERVIÇO</span><span class="pulse" aria-hidden="true"></span></div><div class="status-value" id="serviceStatus">Carregando</div><p id="serviceDescription">Consultando a API de monitoramento...</p></article>
           <article class="metric-card"><div class="card-heading"><span>LATÊNCIA ATUAL</span><span class="metric-icon">⚡</span></div><div class="metric-value" id="latency">—</div><p id="latencyDescription">Sem medição disponível</p></article>
@@ -24,11 +31,45 @@
           <article class="metric-card"><div class="card-heading"><span>ERROS</span><span class="metric-icon">✕</span></div><div class="metric-value" id="errors">—</div><p id="errorsDescription">Falhas nas verificações</p></article>
           <article class="metric-card"><div class="card-heading"><span>CONEXÕES ATIVAS</span><span class="metric-icon">🔌</span></div><div class="metric-value" id="connections">—</div><p id="connectionsDescription">Sessões recentes</p></article>
         </section>
-        <section class="panel history-panel" aria-labelledby="history-title"><div class="panel-heading"><div><p class="eyebrow">HISTÓRICO DE DISPONIBILIDADE</p><h2 id="history-title">Últimas verificações</h2></div><span class="badge" id="statusBadge">Pendente</span></div><div class="history-summary"><span id="averageLatency">Latência média: —</span><span id="httpStatus">HTTP: —</span><span id="historyCount">0 verificações</span></div><div class="history-chart" id="historyChart" role="img" aria-label="Histórico de disponibilidade"></div><p class="chart-legend"><span class="legend online"></span> Online <span class="legend degraded"></span> Degradado <span class="legend offline"></span> Offline</p></section>
+        <section class="charts-grid">
+          <section class="panel history-panel" aria-labelledby="history-title">
+            <div class="panel-heading"><div><p class="eyebrow">HISTÓRICO DE DISPONIBILIDADE</p><h2 id="history-title">Latência ao longo do tempo</h2></div><span class="badge" id="statusBadge">Pendente</span></div>
+            <div class="history-summary"><span id="averageLatency">Latência média: —</span><span id="httpStatus">HTTP: —</span><span id="historyCount">0 verificações</span></div>
+            <div class="chart-box">
+              <canvas id="historyChart" aria-label="Gráfico de latência ao longo do tempo"></canvas>
+              <p class="chart-empty" id="historyEmpty">O histórico aparecerá após a primeira verificação configurada.</p>
+            </div>
+            <p class="chart-legend"><span class="legend online"></span> Online <span class="legend degraded"></span> Degradado <span class="legend offline"></span> Offline</p>
+          </section>
+          <section class="panel breakdown-panel" aria-labelledby="breakdown-title">
+            <div class="panel-heading"><div><p class="eyebrow">DISTRIBUIÇÃO</p><h2 id="breakdown-title">Status das verificações</h2></div></div>
+            <div class="chart-box breakdown-box">
+              <canvas id="statusPie" aria-label="Distribuição percentual de status das verificações"></canvas>
+              <p class="chart-empty" id="breakdownEmpty">Sem dados suficientes ainda.</p>
+            </div>
+          </section>
+        </section>
         <section class="panel" aria-labelledby="activity-title"><div class="panel-heading"><div><p class="eyebrow">ÚLTIMA VERIFICAÇÃO</p><h2 id="activity-title">Resumo da conexão</h2></div></div><dl class="details details-complete"><div><dt>Serviço</dt><dd id="serviceName">supabase</dd></div><div><dt>Banco de dados</dt><dd id="databaseStatus">Verificando</dd></div><div><dt>Última verificação</dt><dd id="lastChecked">—</dd></div><div><dt>Endpoint</dt><dd><code id="endpoint">—</code></dd></div><div><dt>Mensagem</dt><dd id="message">Iniciando verificação...</dd></div></dl></section>
         <p class="monitor-note">Requisições e erros correspondem às verificações realizadas pelo monitor. O histórico é mantido enquanto a API estiver em execução.</p>
       </div>
-      <section class="users-panel" id="usersPanel" hidden aria-labelledby="users-title"><div class="hero users-hero"><div><p class="eyebrow">ACOMPANHAMENTO</p><h1 id="users-title">Atividade dos usuários</h1><p class="subtitle">Usuários são considerados ativos quando acessaram o sistema nos últimos 5 minutos.</p></div></div><section class="metrics" aria-label="Resumo de usuários"><article class="metric-card primary-card"><div class="card-heading"><span>ATIVOS AGORA</span><span class="pulse"></span></div><div class="metric-value" id="activeUsers">—</div><p>Com atividade recente</p></article><article class="metric-card"><div class="card-heading"><span>INATIVOS</span><span class="metric-icon">◌</span></div><div class="metric-value" id="inactiveUsers">—</div><p>Sem atividade recente ou desativados</p></article><article class="metric-card"><div class="card-heading"><span>TOTAL</span><span class="metric-icon">♙</span></div><div class="metric-value" id="totalUsers">—</div><p>Perfis cadastrados</p></article></section><section class="panel users-list-panel"><div class="panel-heading"><div><p class="eyebrow">SESSÕES</p><h2>Lista de usuários</h2></div><span class="badge" id="usersUpdated">Carregando</span></div><p class="empty-state" id="usersMessage">Consultando os dados de atividade...</p><div class="users-list" id="usersList" aria-live="polite"></div></section></section>
+      <section class="users-panel" id="usersPanel" hidden aria-labelledby="users-title"><div class="hero users-hero"><div><p class="eyebrow">ACOMPANHAMENTO</p><h1 id="users-title">Atividade dos usuários</h1><p class="subtitle">Usuários são considerados ativos quando acessaram o sistema nos últimos 5 minutos.</p></div></div><section class="metrics" aria-label="Resumo de usuários"><article class="metric-card primary-card"><div class="card-heading"><span>ATIVOS AGORA</span><span class="pulse"></span></div><div class="metric-value" id="activeUsers">—</div><p>Com atividade recente</p></article><article class="metric-card"><div class="card-heading"><span>INATIVOS</span><span class="metric-icon">◌</span></div><div class="metric-value" id="inactiveUsers">—</div><p>Sem atividade recente ou desativados</p></article><article class="metric-card"><div class="card-heading"><span>TOTAL</span><span class="metric-icon">♙</span></div><div class="metric-value" id="totalUsers">—</div><p>Perfis cadastrados</p></article></section>
+      <section class="charts-grid">
+        <section class="panel activity-panel" aria-labelledby="user-activity-title">
+          <div class="panel-heading"><div><p class="eyebrow">ATIVIDADE</p><h2 id="user-activity-title">Ativos vs. inativos</h2></div></div>
+          <div class="chart-box">
+            <canvas id="usersActivityPie" aria-label="Distribuição de usuários ativos e inativos"></canvas>
+            <p class="chart-empty" id="usersActivityEmpty">Sem usuários cadastrados ainda.</p>
+          </div>
+        </section>
+        <section class="panel roles-panel" aria-labelledby="user-roles-title">
+          <div class="panel-heading"><div><p class="eyebrow">PERFIS</p><h2 id="user-roles-title">Usuários por papel</h2></div></div>
+          <div class="chart-box">
+            <canvas id="usersRoleChart" aria-label="Quantidade de usuários por papel"></canvas>
+            <p class="chart-empty" id="usersRoleEmpty">Sem usuários cadastrados ainda.</p>
+          </div>
+        </section>
+      </section>
+      <section class="panel users-list-panel"><div class="panel-heading"><div><p class="eyebrow">SESSÕES</p><h2>Lista de usuários</h2></div><span class="badge" id="usersUpdated">Carregando</span></div><p class="empty-state" id="usersMessage">Consultando os dados de atividade...</p><div class="users-list" id="usersList" aria-live="polite"></div></section></section>
     </main>
     <script src="./app.js"></script>
   </body>
